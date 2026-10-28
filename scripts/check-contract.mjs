@@ -22,7 +22,9 @@ assert.ok(workflow.includes(`node-version: ${pins.node.version}`));
 assert.ok(workflow.includes(`actions/setup-node@${pins.setupNode}`));
 assert.ok(workflow.includes(`ref: ${pins.setupNode}`));
 assert.ok(workflow.includes(`ref: ${pins.setupPython}`));
-for (const action of workflow.matchAll(/uses:\s*(\S+)/g)) assert.match(action[1], /^[\w-]+\/[\w-]+(?:\/[\w-]+)?@[a-f0-9]{40}$/);
+for (const line of workflow.split('\n').filter(line => /\buses:/.test(line))) {
+  assert.match(line, /^\s*- uses: [\w-]+\/[\w-]+(?:\/[\w-]+)?@[a-f0-9]{40} # v\d+\.\d+\.\d+\s*$/, 'Actions require a full release SHA and version comment');
+}
 for (const source of dockerfile.matchAll(/^FROM\s+(\S+)/gm)) assert.match(source[1], /@sha256:[a-f0-9]{64}$/);
 assert.ok(!/^#\s*syntax=/m.test(dockerfile), 'No unpinned Dockerfile frontend');
 assert.ok(workflow.includes('github.ref_protected'));

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, lstatSync, mkdtempSync, mkdirSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assertContainedTree, verify } from '../scripts/build-toolcache.mjs';
+import { assertContainedTree, normalizeTreeModes, payloadMode, verify } from '../scripts/build-toolcache.mjs';
 import { previousDigest } from '../scripts/registry-manifest.mjs';
 
 test('checksum accepts the exact archive and rejects corruption or invalid hashes', () => {
@@ -43,4 +43,40 @@ test('retention accepts only an immutable linux amd64 single manifest', () => {
   assert.throws(() => previousDigest({ Descriptor: { ...manifest.Descriptor, digest: 'current' } }));
   assert.throws(() => previousDigest({ Descriptor: { ...manifest.Descriptor, platform: { os: 'linux', architecture: 'arm64' } } }));
   assert.throws(() => previousDigest({}));
+});
+
+test('payload modes remove group/world writes and special bits while retaining all executable bits', () => {
+  assert.equal(payloadMode(0o777), 0o755);
+  assert.equal(payloadMode(0o666), 0o644);
+  for (let mode = 0; mode <= 0o7777; mode++) {
+    const normalized = payloadMode(mode);
+    assert.equal(normalized & 0o7022, 0);
+    assert.equal(normalized & 0o111, mode & 0o111);
+    assert.equal(normalized & 0o644, mode & 0o644);
+    assert.equal(payloadMode(normalized), normalized);
+  }
+});
+
+test('tree normalization keeps symlinks, executable files and read-only files intact', { skip: process.platform === 'win32' && 'POSIX modes require Linux CI' }, () => {
+  const root = mkdtempSync(join(tmpdir(), 'toolchain-modes-'));
+  try {
+    const bin = join(root, 'bin');
+    mkdirSync(bin);
+    const executable = join(bin, 'python');
+    const data = join(root, 'data');
+    const readonly = join(root, 'readonly');
+    for (const path of [executable, data, readonly]) writeFileSync(path, 'fixture');
+    for (const [path, mode] of [[root, 0o777], [bin, 0o777], [executable, 0o777], [data, 0o666], [readonly, 0o444]]) chmodSync(path, mode);
+    symlinkSync('bin/python', join(root, 'python'));
+    symlinkSync('bin', join(root, 'alias'));
+    normalizeTreeModes(root);
+    for (const [path, mode] of [[root, 0o755], [bin, 0o755], [executable, 0o755], [data, 0o644], [readonly, 0o444]]) assert.equal(statSync(path).mode & 0o7777, mode);
+    for (const name of ['python', 'alias']) assert.ok(lstatSync(join(root, name)).isSymbolicLink());
+    assert.equal(readlinkSync(join(root, 'python')), 'bin/python');
+    assert.equal(readlinkSync(join(root, 'alias')), 'bin');
+    normalizeTreeModes(root); // Idempotent on a second pass.
+    assert.equal(statSync(executable).mode & 0o7777, 0o755);
+    symlinkSync(tmpdir(), join(root, 'escape'));
+    assert.throws(() => normalizeTreeModes(root), /escapes toolcache/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

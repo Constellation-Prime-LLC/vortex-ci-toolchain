@@ -1,7 +1,7 @@
 // Executed inside the exact pinned runner, with no network and no host toolcache.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const pins = JSON.parse(readFileSync('/smoke/pins.json', 'utf8'));
@@ -12,6 +12,13 @@ const actionRuntime = '/home/runner/externals/node20/bin/node'; // Both pinned a
 assert.equal(process.env.AGENT_TOOLSDIRECTORY, undefined, 'AGENT_TOOLSDIRECTORY must be unset');
 assert.equal(process.env.RUNNER_TOOL_CACHE, cache);
 for (const path of [node, python]) assert.equal(statSync(`${path}.complete`).size, 0);
+function assertPayloadModes(path) {
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink()) return;
+  assert.equal(stat.mode & 0o7022, 0, `Unsafe payload mode: ${path}`);
+  if (stat.isDirectory()) for (const name of readdirSync(path)) assertPayloadModes(join(path, name));
+}
+assertPayloadModes(cache);
 for (const directory of ['/tmp/home', '/tmp/workspace', '/tmp/runner']) mkdirSync(directory, { recursive: true });
 
 // @actions/core writes multiline command files. Parse only the requested field.

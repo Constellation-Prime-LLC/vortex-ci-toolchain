@@ -115,7 +115,9 @@ jobs:
           printf '%s  %s\n' "$ARCHIVE_SHA" .local/toolchain.tar | sha256sum --check
           docker load --input .local/toolchain.tar
           node scripts/publish.mjs push
+      # Artifact attestations need a public repository or GitHub Enterprise Cloud; this private repository on the Team plan skips them.
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: github.event.repository.visibility == 'public'
         with:
           subject-name: ghcr.io/constellation-prime-llc/vortex-ci-toolchain
           subject-digest: ${{ steps.image.outputs.digest }}

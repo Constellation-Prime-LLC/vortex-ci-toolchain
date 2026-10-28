@@ -1,0 +1,3 @@
+.local/
+*.tar
+node_modules/

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboard": true,
+  "enabledManagers": ["custom.regex", "dockerfile", "github-actions"],
+  "pinDigests": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^pins\\.json$/"],
+      "matchStrings": ["\"node\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "nodejs/node",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^pins\\.json$/"],
+      "matchStrings": ["\"python\":\\s*\\{\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "actions/python-versions",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)-\\d+$",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["nodejs/node", "actions/python-versions"],
+      "automerge": false,
+      "prBodyNotes": ["Update the archive URL and independently verify SHA-256 in pins.json; synchronize Dockerfile bootstrap and workflow version; run checks and pinned-runner smoke before approval."]
+    }
+  ]
+}

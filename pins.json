@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "runnerImage": "ghcr.io/actions/actions-runner:2.338.0@sha256:4ffadc0002b2581327e06101fc8c06cd189232baf79fe561fac9caeb76f5e807",
+  "payloadBase": "busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+  "node": {
+    "version": "24.21.0",
+    "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.gz",
+    "sha256": "6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff"
+  },
+  "python": {
+    "version": "3.13.15",
+    "url": "https://github.com/actions/python-versions/releases/download/3.13.15-31064747964/python-3.13.15-linux-24.04-x64.tar.gz",
+    "sha256": "4e544242f8a4ef647a6f511b67f9b00eefc9ef366644e3c40a27a6eff709ae2b"
+  },
+  "setupNode": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+  "setupPython": "a26af69be951a213d495a4c3e4e4022e16d87065"
+}

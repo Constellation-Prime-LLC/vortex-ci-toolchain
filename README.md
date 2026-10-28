@@ -39,4 +39,4 @@ The initial Windows authoring session cannot run Docker. Until the first CI run,
 
 ## Visibility
 
-The repository and its GHCR package are private (owner decision 2026-10-28). Consequences: build provenance attestations run only if the repository becomes public (GitHub requires a public repository or Enterprise Cloud for them), and each CI node pulls the image with a read-only `read:packages` credential stored as a Kubernetes image pull secret, created and rotated by the owner.
+The repository and its GHCR package are public (owner decision 2026-10-28): the image holds only public upstream archives and pins, nodes pull it without credentials, and every published digest carries a build provenance attestation (`gh attestation verify oci://ghcr.io/constellation-prime-llc/vortex-ci-toolchain@<digest> -R Constellation-Prime-LLC/vortex-ci-toolchain`).

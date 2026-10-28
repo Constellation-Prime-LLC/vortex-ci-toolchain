@@ -64,6 +64,7 @@ assert.throws(() => writeFileSync(`${cache}/smoke-write`, 'must fail'), error =>
 const nodeHit = setup('node', pins.node.version);
 assert.equal(nodeHit.status, 0);
 assert.ok(nodeHit.log.includes(`Found in cache @ ${node}`));
+assert.ok(!nodeHit.log.includes('Attempting to download'));
 assert.equal(readFileSync(`${nodeHit.work}/path`, 'utf8').trim(), `${node}/bin`);
 console.log(`setup-node cache hit: ${node}`);
 const pythonHit = setup('python', pins.python.version);
@@ -90,6 +91,8 @@ for (const tool of ['node', 'python']) {
   assert.equal(miss.status, 1, `${tool} missing version must fail normally`);
   assert.ok(!miss.log.includes('Found in cache @'));
   if (tool === 'python') assert.ok(miss.log.includes('Version 0.0.0 was not found in the local cache'));
+  // Pinned setup-node official_builds.ts logs this before its manifest lookup, so it marks a cache miss.
+  if (tool === 'node') assert.ok(miss.log.includes('Attempting to download 0.0.0'));
   console.log(`setup-${tool} missing-version refusal confirmed`);
 }
 console.log('Pinned runner ABI, cache hits, markers, paths and missing-version checks passed');
